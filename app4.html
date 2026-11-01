@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Minimalist Daily & Workout</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #000000;
+      --border: #171717;
+      --gray-light: #f5f5f5;
+      --gray-mid: #e5e5e5;
+      --gray-dark: #737373;
+      --green: #22c55e;
+      --red: #ef4444;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-mono);
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--fg);
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .sync-bar {
+      background: var(--gray-light);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 12px;
+    }
+
+    .sync-inputs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 10px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .nav-btn {
+      background: none;
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .nav-btn.active {
+      background-color: var(--fg);
+      color: var(--bg);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      text-transform: uppercase;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .icon-btn {
+      background: none;
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .icon-btn:hover {
+      background-color: var(--gray-light);
+    }
+
+    .workspace {
+      display: none;
+    }
+
+    .workspace.active {
+      display: block;
+    }
+
+    .grid-panes {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 30px;
+    }
+
+    @media (min-width: 900px) {
+      .grid-panes {
+        grid-template-columns: 1.2fr 0.8fr;
+      }
+    }
+
+    .card {
+      border: 2px solid var(--border);
+      padding: 16px;
+      background-color: var(--bg);
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .form-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"], input[type="number"], select {
+      border: 1px solid var(--border);
+      padding: 8px;
+      font-size: 13px;
+      background: var(--bg);
+      color: var(--fg);
+      outline: none;
+      width: 100%;
+    }
+
+    button.btn-primary {
+      background: var(--fg);
+      color: var(--bg);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      cursor: pointer;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    button.btn-primary:hover {
+      opacity: 0.85;
+    }
+
+    .matrix-wrapper {
+      overflow-x: auto;
+      max-width: 100%;
+      border: 1px solid var(--border);
+    }
+
+    .matrix-table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .matrix-table th, .matrix-table td {
+      border: 1px solid var(--border);
+      padding: 8px;
+      min-width: 38px;
+      height: 38px;
+    }
+
+    .matrix-table th.habit-col, .matrix-table td.habit-col {
+      text-align: left;
+      min-width: 180px;
+      position: sticky;
+      left: 0;
+      background: var(--bg);
+      z-index: 2;
+      font-weight: bold;
+    }
+
+    .habit-title-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+
+    .habit-title-wrapper:hover {
+      color: var(--gray-dark);
+    }
+
+    .cell-box {
+      width: 24px;
+      height: 24px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 12px;
+      user-select: none;
+      border: 1px solid var(--border);
+    }
+
+    .cell-box.green {
+      background-color: var(--green);
+      color: #fff;
+      border-color: var(--green);
+    }
+
+    .cell-box.red {
+      background-color: var(--red);
+      color: #fff;
+      border-color: var(--red);
+    }
+
+    .cell-box.unstarted {
+      background-color: var(--gray-light);
+      color: var(--gray-dark);
+      border-color: var(--gray-mid);
+      cursor: default;
+    }
+
+    .cell-box.pending {
+      border: 2px dashed var(--border);
+    }
+
+    .task-item, .reward-card-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--border);
+      padding: 10px;
+      margin-bottom: 8px;
+      background: var(--gray-light);
+      font-size: 12px;
+    }
+
+    .btn-sm {
+      background: none;
+      border: 1px solid var(--border);
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .btn-sm:hover {
+      background: var(--gray-mid);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      padding: 20px;
+      width: 90%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .dopamine-card {
+      border: 2px solid var(--border);
+      padding: 20px;
+      text-align: center;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .timer-display {
+      font-size: 48px;
+      font-weight: 900;
+      margin: 20px 0;
+    }
+
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      padding: 8px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      height: 80px;
+      outline: none;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sync-bar">
+    <div><strong>☁️ CLOUD SYNC:</strong> Enter a shared passcode to sync between phone and laptop.</div>
+    <div class="sync-inputs">
+      <input type="text" id="syncPasscode" placeholder="Passcode..." style="width:140px; padding:4px;" />
+      <button class="btn-sm" id="btnConnectSync">CONNECT</button>
+      <span id="syncStatus" style="font-weight:bold; color:var(--gray-dark);">OFFLINE</span>
+    </div>
+  </div>
+
+  <header>
+    <div class="title">MINIMALIST DAILY & WORKOUT</div>
+    <div class="header-actions">
+      <button class="icon-btn" id="btnExport">⇄ BACKUP</button>
+      <button class="icon-btn" id="btnImportTrigger">↑ IMPORT</button>
+      <input type="file" id="importFile" style="display:none;" />
+    </div>
+  </header>
+
+  <div class="nav-tabs">
+    <button class="nav-btn active" id="tab-dashboard">1. DASHBOARD & HABITS</button>
+    <button class="nav-btn" id="tab-rewards">2. WALLET & REWARDS</button>
+    <button class="nav-btn" id="tab-workout">3. WORKOUT MATRIX</button>
+    <button class="nav-btn" id="tab-dopamine">4. DOPAMINE RESET</button>
+  </div>
+
+  <!-- TAB 1: HABITS & TASKS -->
+  <div id="workspace-dashboard" class="workspace active">
+    <div class="grid-panes">
+      <div class="card">
+        <div class="card-title">
+          <span>DAILY NON-NEGOTIABLES & REWARDS</span>
+          <select id="daysRange" style="width:auto; padding:2px 6px;">
+            <option value="7">7 Days</option>
+            <option value="14" selected>14 Days</option>
+            <option value="30">30 Days</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex-direction:column;">
+          <input type="text" id="habitName" placeholder="Habit Name (e.g. Study 5 mins)..." />
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="habitCategory" placeholder="Category" />
+            <input type="number" id="habitDailyPayout" placeholder="Daily Payout (₹/pts)" min="0" value="5" style="width:120px;" />
+          </div>
+          <div style="display:flex; gap:8px;">
+            <input type="number" id="habitStreakReq" placeholder="Streak Milestone (Days)" min="1" value="5" style="width:140px;" />
+            <input type="text" id="habitStreakReward" placeholder="Milestone Reward (e.g. Cheat Meal)" />
+            <button class="btn-primary" id="btnAddHabit">+ ADD</button>
+          </div>
+        </div>
+        <div class="matrix-wrapper">
+          <table class="matrix-table">
+            <thead>
+              <tr id="matrixHeader"><th class="habit-col">Habit</th></tr>
+            </thead>
+            <tbody id="matrixBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>TODAY'S TO-DO LIST</span>
+          <span id="todayDate" style="font-size:11px; color:var(--gray-dark);"></span>
+        </div>
+        <div class="form-group" style="flex-direction:column;">
+          <input type="text" id="taskName" placeholder="Task for today..." />
+          <div style="display:flex; gap:8px;">
+            <select id="taskLinkHabit"><option value="">-- Link to Habit (Optional) --</option></select>
+            <button class="btn-primary" id="btnAddTask">+ TASK</button>
+          </div>
+        </div>
+        <div id="taskList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: WALLET & REWARDS -->
+  <div id="workspace-rewards" class="workspace">
+    <div class="grid-panes">
+      <div class="card" style="text-align:center; background:var(--gray-light);">
+        <div class="card-title" style="justify-content:center;">TOTAL CASH / POINTS WALLET</div>
+        <div id="walletTotalDisplay" style="font-size:42px; font-weight:900; margin:15px 0; color:var(--green);">₹0</div>
+        <p style="font-size:11px; color:var(--gray-dark);">Accumulated automatically from every daily non-negotiable green check.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>UNLOCKED STREAK REWARDS</span>
+          <span id="earnedCountBadge" style="background:var(--fg); color:var(--bg); padding:2px 6px; font-size:11px;">0 Ready</span>
+        </div>
+        <p style="font-size:11px; color:var(--gray-dark); margin-bottom:10px;">Milestone rewards unlocked from your habit streaks. Click use when claimed.</p>
+        <div id="earnedWinsList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: WORKOUT MATRIX -->
+  <div id="workspace-workout" class="workspace">
+    <div class="card">
+      <div class="card-title">
+        <span>WORKOUT PROGRAM MATRIX</span>
+        <button class="btn-primary" id="btnOpenAddDayModal">+ ADD WORKOUT DAY</button>
+      </div>
+      <div id="workoutDaysContainer"></div>
+    </div>
+  </div>
+
+  <!-- TAB 4: DOPAMINE RESET -->
+  <div id="workspace-dopamine" class="workspace">
+    <div class="dopamine-card">
+      <div class="card-title" style="justify-content:center;">CRAVING / CHEAP DOPAMINE RESET</div>
+      <p style="font-size:12px; margin-top:10px;">Pause and break the urge loop. Take 60 seconds of box breathing.</p>
+      <div class="timer-display" id="resetTimer">01:00</div>
+      <button class="btn-primary" id="timerBtn">START 60s BREATHING</button>
+      <div style="margin-top:20px; text-align:left;">
+        <label style="font-size:11px; font-weight:bold;">CRAVING SCRATCHPAD:</label>
+        <textarea id="brainDump" placeholder="Write down what you are feeling..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT HABIT -->
+  <div class="modal" id="editHabitModal">
+    <div class="modal-content">
+      <div class="card-title">EDIT NON-NEGOTIABLE & REWARDS</div>
+      <input type="text" id="editHabitName" placeholder="Name..." style="margin-bottom:10px;" />
+      <input type="text" id="editHabitCat" placeholder="Category..." style="margin-bottom:10px;" />
+      <label style="font-size:11px; font-weight:bold;">Daily Payout (₹/pts):</label>
+      <input type="number" id="editHabitPayout" placeholder="5" min="0" style="margin-bottom:10px;" />
+      <label style="font-size:11px; font-weight:bold;">Streak Milestone Days:</label>
+      <input type="number" id="editHabitStreakReq" placeholder="5" min="1" style="margin-bottom:10px;" />
+      <label style="font-size:11px; font-weight:bold;">Streak Reward Name:</label>
+      <input type="text" id="editHabitStreakReward" placeholder="Reward Title" style="margin-bottom:15px;" />
+      <div class="modal-actions" style="justify-content:space-between;">
+        <button class="btn-sm" id="btnDeleteHabit" style="border-color:var(--red); color:var(--red);">DELETE</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-sm" id="btnCancelEditHabit">CANCEL</button>
+          <button class="btn-primary" id="btnSaveEditHabit">SAVE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.appState = {
+      habits: [],
+      tasks: [],
+      workoutDays: [],
+      logs: {},
+      earnedWins: []   // { id, title, earnedDate, sourceKey, used: false }
+    };
+
+    let editingHabitId = null;
+    let timerInterval = null;
+    let timerSeconds = 60;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      document.getElementById('todayDate').innerText = formatDisplayDate(getTodayStr());
+      setupListeners();
+      checkStreaksAndGrantRewards();
+      renderAll();
+    });
+
+    function setupListeners() {
+      document.getElementById('tab-dashboard').addEventListener('click', () => switchTab('dashboard'));
+      document.getElementById('tab-rewards').addEventListener('click', () => switchTab('rewards'));
+      document.getElementById('tab-workout').addEventListener('click', () => switchTab('workout'));
+      document.getElementById('tab-dopamine').addEventListener('click', () => switchTab('dopamine'));
+
+      document.getElementById('btnExport').addEventListener('click', exportData);
+      document.getElementById('btnImportTrigger').addEventListener('click', () => document.getElementById('importFile').click());
+      document.getElementById('importFile').addEventListener('change', importData);
+      document.getElementById('btnConnectSync').addEventListener('click', connectCloudSync);
+
+      document.getElementById('btnAddHabit').addEventListener('click', addHabit);
+      document.getElementById('btnAddTask').addEventListener('click', addTask);
+      document.getElementById('daysRange').addEventListener('change', renderHabitsMatrix);
+      document.getElementById('timerBtn').addEventListener('click', toggleResetTimer);
+
+      document.getElementById('btnCancelEditHabit').addEventListener('click', () => closeModal('editHabitModal'));
+      document.getElementById('btnSaveEditHabit').addEventListener('click', saveHabitEdit);
+      document.getElementById('btnDeleteHabit').addEventListener('click', deleteHabit);
+    }
+
+    function getTodayStr() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function formatDisplayDate(dateStr) {
+      const parts = dateStr.split('-');
+      return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : dateStr;
+    }
+
+    function formatShortDate(dateStr) {
+      const parts = dateStr.split('-');
+      return parts.length === 3 ? `${parts[2]}-${parts[1]}` : dateStr;
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.workspace').forEach(w => w.classList.remove('active'));
+      document.getElementById(`tab-${tab}`).classList.add('active');
+      document.getElementById(`workspace-${tab}`).classList.add('active');
+    }
+
+    function renderAll() {
+      renderHabitsMatrix();
+      renderTasks();
+      renderWalletAndRewards();
+      updateHabitDropdown();
+    }
+
+    function saveData() {
+      localStorage.setItem('minimalist_app_data', JSON.stringify(window.appState));
+    }
+
+    function loadData() {
+      const saved = localStorage.getItem('minimalist_app_data');
+      if (saved) {
+        try { window.appState = JSON.parse(saved); } catch (e) { console.error(e); }
+      }
+      if(!window.appState.earnedWins) window.appState.earnedWins = [];
+    }
+
+    function exportData() {
+      const blob = new Blob([JSON.stringify(window.appState, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `minimalist-backup-${getTodayStr()}.json`;
+      a.click();
+    }
+
+    function importData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          window.appState = JSON.parse(evt.target.result);
+          saveData();
+          renderAll();
+          alert('Data successfully imported!');
+        } catch (err) { alert('Invalid file.'); }
+      };
+      reader.readAsText(file);
+    }
+
+    function connectCloudSync() {
+      const code = document.getElementById('syncPasscode').value.trim();
+      if (!code) return;
+      document.getElementById('syncStatus').innerText = `SYNCED [${code}] ✓`;
+      document.getElementById('syncStatus').style.color = 'var(--green)';
+      saveData();
+    }
+
+    // HABITS & PER-HABIT REWARDS LOGIC
+    function addHabit() {
+      const name = document.getElementById('habitName').value.trim();
+      const cat = document.getElementById('habitCategory').value.trim() || 'General';
+      const payout = parseFloat(document.getElementById('habitDailyPayout').value) || 0;
+      const streakReq = parseInt(document.getElementById('habitStreakReq').value) || 5;
+      const streakReward = document.getElementById('habitStreakReward').value.trim() || 'Special Reward';
+      if (!name) return;
+
+      window.appState.habits.push({
+        id: 'h_' + Date.now(),
+        name, category: cat,
+        dailyPayout: payout,
+        streakReq: streakReq,
+        streakReward: streakReward,
+        createdDate: getTodayStr(),
+        history: {}
+      });
+
+      document.getElementById('habitName').value = '';
+      document.getElementById('habitCategory').value = '';
+      document.getElementById('habitDailyPayout').value = '5';
+      document.getElementById('habitStreakReq').value = '5';
+      document.getElementById('habitStreakReward').value = '';
+      saveData();
+      renderAll();
+    }
+
+    function renderHabitsMatrix() {
+      const range = parseInt(document.getElementById('daysRange').value);
+      const headerRow = document.getElementById('matrixHeader');
+      const body = document.getElementById('matrixBody');
+      headerRow.innerHTML = '<th class="habit-col">Habit / Perks</th>';
+      body.innerHTML = '';
+
+      const dates = [];
+      const today = new Date();
+      for (let i = range - 1; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const dStr = d.toISOString().split('T')[0];
+        dates.push(dStr);
+        const th = document.createElement('th');
+        th.innerText = formatShortDate(dStr);
+        headerRow.appendChild(th);
+      }
+
+      if (window.appState.habits.length === 0) {
+        body.innerHTML = `<tr><td colspan="${dates.length + 1}" style="text-align:center; padding:15px; color:var(--gray-dark);">No non-negotiables added yet.</td></tr>`;
+        return;
+      }
+
+      window.appState.habits.forEach(habit => {
+        let currentStreak = 0;
+        let checkDate = new Date();
+        while(true) {
+          const dStr = checkDate.toISOString().split('T')[0];
+          if (habit.history[dStr] === 'green') {
+            currentStreak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else {
+            break;
+          }
+        }
+
+        const tr = document.createElement('tr');
+        const tdName = document.createElement('td');
+        tdName.className = 'habit-col';
+        tdName.innerHTML = `<div class="habit-title-wrapper">
+          <div>
+            <strong>${habit.name}</strong><br/>
+            <small style="color:var(--gray-dark);">+₹${habit.dailyPayout}/day | 🔥${currentStreak} (Goal: ${habit.streakReq}d ➔ ${habit.streakReward})</small>
+          </div>
+          <span>✏️</span>
+        </div>`;
+        tdName.onclick = () => openEditHabitModal(habit.id);
+        tr.appendChild(tdName);
+
+        dates.forEach(dStr => {
+          const td = document.createElement('td');
+          const box = document.createElement('div');
+          box.className = 'cell-box';
+          const isUnstarted = dStr < (habit.createdDate || getTodayStr());
+          const status = habit.history[dStr];
+
+          if (isUnstarted) { box.classList.add('unstarted'); box.innerText = '-'; }
+          else if (status === 'green') { box.classList.add('green'); box.innerText = '✓'; }
+          else if (status === 'red') { box.classList.add('red'); box.innerText = '✕'; }
+          else { box.classList.add('pending'); }
+
+          if (!isUnstarted) {
+            box.onclick = () => { toggleHabitCell(habit.id, dStr); };
+          }
+          td.appendChild(box);
+          tr.appendChild(td);
+        });
+        body.appendChild(tr);
+      });
+    }
+
+    function toggleHabitCell(habitId, dStr) {
+      const habit = window.appState.habits.find(h => h.id === habitId);
+      if (!habit) return;
+      const current = habit.history[dStr];
+      if (!current) habit.history[dStr] = 'green';
+      else if (current === 'green') habit.history[dStr] = 'red';
+      else delete habit.history[dStr];
+
+      saveData();
+      checkStreaksAndGrantRewards();
+      renderAll();
+    }
+
+    // CHECK STREAKS & GRANT REWARDS AUTOMATICALLY
+    function checkStreaksAndGrantRewards() {
+      window.appState.habits.forEach(habit => {
+        let currentStreak = 0;
+        let checkDate = new Date();
+        while(true) {
+          const dStr = checkDate.toISOString().split('T')[0];
+          if (habit.history[dStr] === 'green') {
+            currentStreak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else {
+            break;
+          }
+        }
+
+        if (habit.streakReq && currentStreak >= habit.streakReq) {
+          const winKey = `${habit.id}_streak_${currentStreak}`;
+          const alreadyGranted = window.appState.earnedWins.some(w => w.sourceKey === winKey);
+          if (!alreadyGranted) {
+            window.appState.earnedWins.push({
+              id: 'win_' + Date.now(),
+              title: `${habit.streakReward} [${habit.name} ${currentStreak}d Streak]`,
+              earnedDate: getTodayStr(),
+              sourceKey: winKey,
+              used: false
+            });
+          }
+        }
+      });
+      saveData();
+    }
+
+    function renderWalletAndRewards() {
+      // Calculate total money/points in wallet from all green checks across all habits
+      let totalCash = 0;
+      window.appState.habits.forEach(habit => {
+        const payout = habit.dailyPayout || 0;
+        const greenDaysCount = Object.values(habit.history).filter(val => val === 'green').length;
+        totalCash += greenDaysCount * payout;
+      });
+
+      document.getElementById('walletTotalDisplay').innerText = `₹${totalCash}`;
+
+      // Render earned win tokens
+      const container = document.getElementById('earnedWinsList');
+      const badge = document.getElementById('earnedCountBadge');
+      container.innerHTML = '';
+
+      const activeWins = window.appState.earnedWins.filter(w => !w.used);
+      badge.innerText = `${activeWins.length} Ready`;
+
+      if (window.appState.earnedWins.length === 0) {
+        container.innerHTML = '<div style="font-size:11px; color:var(--gray-dark); padding:10px;">Hit your habit streak milestones to unlock rewards!</div>';
+        return;
+      }
+
+      window.appState.earnedWins.forEach(win => {
+        const div = document.createElement('div');
+        div.className = 'reward-card-item';
+        div.style.background = win.used ? 'var(--gray-light)' : 'var(--bg)';
+        div.innerHTML = `
+          <div>
+            <div style="font-weight:bold; ${win.used ? 'text-decoration:line-through; color:var(--gray-dark);' : ''}">${win.title}</div>
+            <small style="color:var(--gray-dark)">Earned: ${formatDisplayDate(win.earnedDate)}</small>
+          </div>
+          <div>
+            ${win.used ? '<span style="font-size:10px; font-weight:bold;">CLAIMED ✓</span>' : `<button class="btn-primary" style="padding:4px 8px; font-size:11px;" onclick="claimWin('${win.id}')">USE REWARD</button>`}
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function claimWin(id) {
+      const win = window.appState.earnedWins.find(w => w.id === id);
+      if (win) {
+        win.used = true;
+        saveData();
+        renderWalletAndRewards();
+      }
+    }
+
+    // TASKS & MODALS
+    function addTask() {
+      const name = document.getElementById('taskName').value.trim();
+      const habitId = document.getElementById('taskLinkHabit').value;
+      if (!name) return;
+      window.appState.tasks.push({ id: 't_' + Date.now(), title: name, habitId: habitId || null, completed: false, date: getTodayStr() });
+      document.getElementById('taskName').value = '';
+      saveData();
+      renderTasks();
+    }
+
+    function toggleTask(taskId) {
+      const task = window.appState.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      task.completed = !task.completed;
+      if (task.habitId && task.date === getTodayStr()) {
+        const habit = window.appState.habits.find(h => h.id === task.habitId);
+        if (habit) habit.history[getTodayStr()] = task.completed ? 'green' : undefined;
+      }
+      saveData();
+      checkStreaksAndGrantRewards();
+      renderAll();
+    }
+
+    function deleteTask(taskId) {
+      window.appState.tasks = window.appState.tasks.filter(t => t.id !== taskId);
+      saveData();
+      renderTasks();
+    }
+
+    function renderTasks() {
+      const container = document.getElementById('taskList');
+      container.innerHTML = '';
+      const todaysTasks = window.appState.tasks.filter(t => t.date === getTodayStr());
+      if (todaysTasks.length === 0) {
+        container.innerHTML = '<div style="font-size:11px; color:var(--gray-dark); text-align:center; padding:10px;">No tasks for today.</div>';
+        return;
+      }
+      todaysTasks.forEach(task => {
+        const div = document.createElement('div');
+        div.className = 'task-item';
+        div.innerHTML = `
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" ${task.completed ? 'checked' : ''} onclick="toggleTask('${task.id}')" />
+            <span style="${task.completed ? 'text-decoration:line-through; color:var(--gray-dark);' : ''}">${task.title}</span>
+          </div>
+          <button class="btn-sm" onclick="deleteTask('${task.id}')">✕</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function updateHabitDropdown() {
+      const select = document.getElementById('taskLinkHabit');
+      select.innerHTML = '<option value="">-- Link to Habit (Optional) --</option>';
+      window.appState.habits.forEach(h => {
+        select.innerHTML += `<option value="${h.id}">${h.name}</option>`;
+      });
+    }
+
+    function openEditHabitModal(id) {
+      editingHabitId = id;
+      const habit = window.appState.habits.find(h => h.id === id);
+      if (!habit) return;
+      document.getElementById('editHabitName').value = habit.name;
+      document.getElementById('editHabitCat').value = habit.category || '';
+      document.getElementById('editHabitPayout').value = habit.dailyPayout || 0;
+      document.getElementById('editHabitStreakReq').value = habit.streakReq || 5;
+      document.getElementById('editHabitStreakReward').value = habit.streakReward || '';
+      document.getElementById('editHabitModal').classList.add('active');
+    }
+
+    function saveHabitEdit() {
+      const habit = window.appState.habits.find(h => h.id === editingHabitId);
+      if (!habit) return;
+      habit.name = document.getElementById('editHabitName').value.trim();
+      habit.category = document.getElementById('editHabitCat').value.trim() || 'General';
+      habit.dailyPayout = parseFloat(document.getElementById('editHabitPayout').value) || 0;
+      habit.streakReq = parseInt(document.getElementById('editHabitStreakReq').value) || 5;
+      habit.streakReward = document.getElementById('editHabitStreakReward').value.trim() || 'Reward';
+      saveData();
+      closeModal('editHabitModal');
+      renderAll();
+    }
+
+    function deleteHabit() {
+      window.appState.habits = window.appState.habits.filter(h => h.id !== editingHabitId);
+      closeModal('editHabitModal');
+      saveData();
+      renderAll();
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    function toggleResetTimer() {
+      const btn = document.getElementById('timerBtn');
+      const display = document.getElementById('resetTimer');
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        btn.innerText = 'START 60s BREATHING';
+        return;
+      }
+      timerSeconds = 60;
+      btn.innerText = 'PAUSE';
+      timerInterval = setInterval(() => {
+        timerSeconds--;
+        let m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+        let s = String(timerSeconds % 60).padStart(2, '0');
+        display.innerText = `${m}:${s}`;
+        if (timerSeconds <= 0) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+          btn.innerText = 'START 60s BREATHING';
+          alert('Breathing reset complete. Great job centering yourself.');
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
